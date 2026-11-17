@@ -1,0 +1,56 @@
+<!doctype html><html><head>
+<meta charset="utf-8">
+
+<style>
+body{margin:0;background:transparent;font-family:Arial,sans-serif}
+.card{padding:18px 20px;border-radius:22px;border:2px solid #b8dcff;background:linear-gradient(135deg,#f7fbff,#eef8ff);box-shadow:0 8px 24px rgba(30,80,130,.12);max-width:760px;margin:3px auto}
+.row{display:flex;align-items:center;gap:14px}.orb{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;background:#fff;border:3px solid #65aee8}.listen{animation:pulse 1.2s infinite;border-color:#25a55f!important}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(37,165,95,.3)}70%{box-shadow:0 0 0 18px rgba(37,165,95,0)}100%{box-shadow:0 0 0 0 rgba(37,165,95,0)}}
+.title{margin:0;font-size:27px;color:#123b5d}.sub{margin:4px 0 0;font-size:15px;color:#456477}.status{margin-top:14px;padding:13px 15px;border-radius:14px;background:#fff;border:1px solid #d4e7f5;color:#17384f;font-size:17px;line-height:1.4}.controls{display:flex;gap:10px;margin-top:12px}button{border:0;border-radius:13px;padding:12px 18px;font-size:17px;font-weight:700;cursor:pointer}.primary{background:#2b7bbb;color:#fff}.secondary{background:#e8f1f7;color:#24465d}.hidden{display:none}.mini{margin-top:10px;color:#587383;font-size:14px}
+</style></head><body>
+<div class="card"><div class="row"><div id="orb" class="orb">🧠</div><div><h2 class="title">Neuro</h2><p class="sub">Hands-free voice assistant </p></div></div>
+<div id="status" class="status">Press <b>Enable Voice</b> once. Then say “Neuro”.</div>
+<div class="controls"><button id="enable" class="primary">🎙️ Enable Voice</button><button id="stop" class="secondary hidden">⏸ Pause Neuro</button></div>
+<div class="mini">Try "Neuro...."</div></div>
+<script>
+// Minimal Streamlit component bridge — no CDN/network dependency.
+const S={
+  setComponentReady(){window.parent.postMessage({isStreamlitMessage:true,type:"streamlit:componentReady",apiVersion:1},"*")},
+  setFrameHeight(h){window.parent.postMessage({isStreamlitMessage:true,type:"streamlit:setFrameHeight",height:Number(h)||275},"*")},
+  setComponentValue(v){window.parent.postMessage({isStreamlitMessage:true,type:"streamlit:setComponentValue",value:v,dataType:"json"},"*")},
+  onRender(fn){window.addEventListener("message",e=>{if(e.data&&e.data.type==="streamlit:render")fn(e.data)})}
+};
+let phone="",rec=null,enabled=false,paused=false,mode="wake",timer=null;
+const status=document.getElementById("status"),enable=document.getElementById("enable"),stop=document.getElementById("stop"),orb=document.getElementById("orb");
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function say(x){if(!window.speechSynthesis)return;speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(x);u.lang="en-IN";u.rate=.92;speechSynthesis.speak(u)}
+function set(x){status.innerHTML=x}function n(x){return(x||"").toLowerCase().replace(/[.,!?;:]/g," ").replace(/\s+/g," ").trim()}
+const wakes=[" neuro","neura","nura"," neural"," nera"," newra"];
+function after(x){x=n(x);for(let w of wakes){let i=x.indexOf(w);if(i>=0)return x.slice(i+w.length).trim()}return null}
+function intent(x){x=n(x);
+if(x.includes("go to games")||x.includes("open games")||x.includes("play games")||x==="games"||x.includes("cognitive games"))return"OPEN_GAMES";
+if(x.includes("go home")||x.includes("open home")||x==="home")return"OPEN_HOME";
+if(x.includes("show location")||x.includes("where is the patient")||x.includes("where is patient")||x.includes("patient location"))return"SHOW_LOCATION";
+if(x.includes("show alerts")||x.includes("show emergency")||x.includes("my alerts"))return"SHOW_ALERTS";
+if(x.includes("show medications")||x.includes("show medication")||x.includes("my medicines")||x.includes("medications"))return"SHOW_MEDICATION";
+if(x.includes("show activity")||x.includes("my activity")||x.includes("cognitive performance"))return"SHOW_ACTIVITY";
+if(x.includes("show safe zones")||x.includes("show safety zones")||x.includes("safe zones"))return"SHOW_SAFE_ZONES";
+if(x.includes("call caregiver")||x.includes("call my caregiver")||x.includes("contact caregiver"))return"CALL_CAREGIVER";
+if(x.includes("take me home")||x.includes("navigate home"))return"NAVIGATE_HOME";
+if(x==="help"||x.includes("what can you do")||x.includes("what can i say"))return"HELP";return null}
+function act(i){if(i==="CALL_CAREGIVER"){if(!phone){set("⚠️ No caregiver phone number is available.");say("I could not find a caregiver phone number.");return}mode="confirm";set("⚠️ Do you want me to call your caregiver? Say yes or no.");say("Do you want me to call your caregiver? Say yes or no.");return}
+let m={OPEN_GAMES:"Opening cognitive games.",OPEN_HOME:"Going home.",SHOW_LOCATION:"Opening patient location.",SHOW_ALERTS:"Opening safety alerts.",SHOW_MEDICATION:"Opening medications and reminders.",SHOW_ACTIVITY:"Opening cognitive activity.",SHOW_SAFE_ZONES:"Opening safe zones.",NAVIGATE_HOME:"Taking you home.",HELP:"You can say go to games, go home, show location, show alerts, show medications, show activity, show safe zones, call caregiver, or help."}[i];
+if(m){set("✅ "+m);say(m)}setTimeout(()=>S.setComponentValue(i),300)}
+function confirm(x){x=n(x);if(/^(yes|yeah|yep|sure|okay|ok|confirm|do it|please do)$/.test(x)){let p=String(phone).replace(/[^0-9+*#;,]/g,"");if(p){set("📞 Calling your caregiver...");say("Calling your caregiver.");setTimeout(()=>location.href="tel:"+p,300)}else{set("⚠️ Invalid caregiver phone number.")}mode="wake";return}if(/^(no|nope|cancel|don't|do not)$/.test(x)){set("Okay. I will not call.");say("Okay. I will not call.");mode="wake";return}set("Please say yes or no.");say("Please say yes or no.")}
+function process(x){x=n(x);if(!x)return;if(mode==="confirm"){confirm(x);return}if(mode==="wake"){let a=after(x);if(a===null)return;if(!a){mode="command";set("🎤 Listening for your command...");say("How can I help?");return}let i=intent(a);if(i)act(i);else{set("Sorry, I did not understand that command.");say("Sorry, I did not understand that command.")}return}let i=intent(x);if(i)act(i);else{set("Sorry, I did not understand that command.");say("Sorry, I did not understand that command.")}mode="wake"}
+function start(){if(!SR){set("❌ Use the latest Chrome or Edge for voice recognition.");return false}rec=new SR();rec.lang="en-IN";rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=1;
+rec.onstart=()=>{orb.classList.add("listen");if(mode==="wake")set("👂 Listening for “Neuro”...")};
+rec.onresult=e=>{let x="";for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)x+=" "+e.results[i][0].transcript;if(x.trim())process(x)};
+rec.onerror=e=>{if(e.error==="not-allowed"||e.error==="service-not-allowed"){enabled=false;enable.disabled=false;stop.classList.add("hidden");set("❌ Microphone permission is blocked. Allow it and click Enable Voice again.");return}if(e.error!=="aborted")set("⚠️ Voice recognition paused. Trying again...")};
+rec.onend=()=>{orb.classList.remove("listen");if(enabled&&!paused){clearTimeout(timer);timer=setTimeout(()=>{try{rec.start()}catch(e){}},350)}};return true}
+enable.onclick=()=>{if(!start())return;enabled=true;paused=false;mode="wake";enable.disabled=true;stop.classList.remove("hidden");set("🎤 Starting microphone...");try{rec.start()}catch(e){}};
+stop.onclick=()=>{enabled=false;paused=true;clearTimeout(timer);try{rec.stop()}catch(e){}orb.classList.remove("listen");enable.disabled=false;stop.classList.add("hidden");set("⏸ Hey Neuro is paused.")};
+S.setComponentReady();
+S.setFrameHeight(275);
+S.onRender(e=>{let a=e.args||{};phone=a.phone||"";S.setFrameHeight(275)});
+</script></body></html>

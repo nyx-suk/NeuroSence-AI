@@ -4,7 +4,7 @@
 ║  Pure Machine Learning Pipeline                                  ║
 ║                                                                  ║
 ║  Dataset  : OASIS Longitudinal (Real Clinical Data)              ║
-║  Course   : CI2018 Machine Learning — VIT Pune 2025-26           ║
+║            ║
 ║  Accuracy : 96% (Medical Grade)                                  ║
 ╚══════════════════════════════════════════════════════════════════╝
 """

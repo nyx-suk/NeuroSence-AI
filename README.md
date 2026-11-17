@@ -1,153 +1,123 @@
-# 🧠 NeuroSense AI
-### Interpretable Alzheimer's Disease Detection using Machine Learning
+🧠 SYNAPTIQ PROJECT DOCUMENTATION
+1. 📌 Project Title
 
-![Python](https://img.shields.io/badge/Python-3.8%2B-blue?style=flat-square&logo=python)
-![scikit-learn](https://img.shields.io/badge/scikit--learn-1.3%2B-orange?style=flat-square&logo=scikit-learn)
-![Accuracy](https://img.shields.io/badge/Accuracy-96%25-brightgreen?style=flat-square)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
-![Course](https://img.shields.io/badge/CI2018-Machine%20Learning-purple?style=flat-square)
+Synaptiq — AI-Powered Cognitive Assessment and Alzheimer’s Support System
 
-> **"ML explains risk — clinically, interpretably, accurately."**
+2. 🧠 Abstract
 
----
+Synaptiq is an AI-assisted healthcare application designed to analyze cognitive health and assist in early detection of Alzheimer’s-related symptoms. The system integrates rule-based cognitive assessment, interactive visualization, multilingual AI chatbot support, and voice-based interaction to provide an intelligent and user-friendly diagnostic experience.
 
-## 📌 Overview
+It aims to make early cognitive screening more accessible, interactive, and interpretable for both patients and healthcare professionals.
 
-**NeuroSense AI** is a pure Machine Learning system for early detection and risk prediction of Alzheimer's disease using real clinical data from the **OASIS Longitudinal MRI Dataset**. The system achieves **96% accuracy** using a Soft Voting Ensemble of Random Forest and SVM models, with full clinical explainability through feature importance analysis.
+3. 🎯 Objectives
+To detect early signs of cognitive decline using MMSE and CDR scores
+To provide an AI-powered conversational assistant for medical queries
+To visualize cognitive progression in an intuitive timeline format
+To build interactive cognitive training games for memory assessment
+To support multilingual and voice-based interaction
+4. ⚙️ System Architecture
+🧩 Architecture Flow:
+User Input
+   ↓
+Streamlit UI Layer
+   ↓
+Rule-Based Cognitive Model (MMSE → Stage Classification)
+   ↓
+LLM Layer (Groq / Llama-3)
+   ↓
+Visualization Engine (Timeline, Charts, Games)
+   ↓
+Final Output (Diagnosis + AI Response + Interaction UI)
+5. 🧠 Modules Description
+5.1 🏠 Dashboard Module
+Displays patient cognitive summary
+Shows MMSE, CDR, and risk confidence
+Provides overall diagnostic snapshot
+5.2 🧠 Risk Timeline Module
+Converts MMSE score into 7-stage cognitive classification
+Visualizes progression from:
+No Decline → Very Severe Decline
+Interactive slider-based exploration
+5.3 🎤 Voice Assistant Module
+Converts speech to text using Whisper model
+Processes query using LLM (Llama 3.1 via Groq)
+Returns medical responses in natural language
+5.4 💬 Multilingual Chatbot
+Supports multiple languages (English, Hindi, Kannada, Tamil)
+Uses LLM for Alzheimer-specific responses
+Maintains chat history using session state
+5.5 🧩 Cognitive Memory Game
+Cognitive training mini-game
+Includes:
+Memory preview phase
+Hidden recall phase
+Tracks:
+attempts
+score
+accuracy
+5.6 🔐 Authentication System
+Simple session-based login system
+Role-based access (Doctor / Patient / Admin concept ready)
+6. 🤖 AI / ML Methodology
+🧠 Cognitive Classification Model
 
-Built as the **CI2018 Machine Learning** course project at **VIT Pune, AY 2025-26**.
+Currently uses a rule-based ML simulation model:
 
----
+MMSE Score → Cognitive Stage Mapping
+MMSE Range	Stage
+27–30	No Decline
+24–26	Very Mild
+20–23	Mild
+15–19	Moderate
+10–14	Moderately Severe
+5–9	Severe
+<5	Very Severe
+🧠 AI Chat System
+Uses Groq API (Llama 3.1 model)
+Prompt-engineered for Alzheimer-focused responses
+Supports multilingual output
+🎤 Speech Processing
+Whisper Large-v3 model for transcription
+Converts speech → text → AI response
+7. 📊 Visualization Techniques
+📈 Cognitive timeline (7-stage progression axis)
+📊 Metric cards (MMSE, CDR, Risk score)
+🎮 Interactive memory game UI
+💬 Chat-based conversational UI
+🎤 Voice interaction feedback system
+8. 🛠️ Tech Stack
+Frontend / UI:
+Streamlit
+AI Models:
+Llama 3.1 (Groq API)
+Whisper Large-v3
+Backend Logic:
+Python
+Session State Management
+Libraries:
+Streamlit
+Groq SDK
+NumPy
+Pandas
+Tempfile
+9. 🚀 Key Features
+🧠 Alzheimer risk stage prediction
+🎤 Voice-based AI assistant
+💬 Multilingual chatbot
+🧩 Cognitive memory game
+📊 Interactive timeline visualization
+🔐 Login authentication system
+10. 📌 Limitations
+Requires internet for LLM API
+Limited clinical validation dataset
+11. 🔮 Future Scope
+Integration with real ML models (Random Forest / XGBoost)
+MRI / brain scan image analysis
+Wearable device integration
+Real-time cognitive tracking
+Hospital EMR integration
+Offline medical assistant mode
+12. 🧾 Conclusion
 
-## 🎯 Key Results
+Synaptiq demonstrates how AI can be used to assist in early cognitive screening and Alzheimer’s support. By combining machine learning logic, generative AI, speech processing, and interactive visualization, it provides a comprehensive cognitive health assistant system that is both accessible and scalable.
 
-| Model | Accuracy | Precision | Recall | F1-Score |
-|:------|:--------:|:---------:|:------:|:--------:|
-| **Voting Ensemble** | **96.00%** 🟢 | **0.9629** | **0.9600** | **0.9599** |
-| Random Forest | 94.67% | 0.9479 | 0.9467 | 0.9466 |
-| SVM (Linear) | 94.67% | 0.9517 | 0.9467 | 0.9465 |
-| SVM (Polynomial) | 94.67% | 0.9517 | 0.9467 | 0.9465 |
-| SVM (RBF) | 90.67% | 0.9092 | 0.9067 | 0.9065 |
-
-**5-Fold Cross-Validation: 94.42% ± 3.82% (RF) | 95.40% ± 3.17% (SVM-RBF)**
-
----
-
-## 📂 Project Structure
-
-```
-NeuroSense-AI/
-│
-├── 📁 ml/                          # Core ML module (CI2018)
-│   ├── data_loader.py              # Unit I  — Data loading, preprocessing, feature engineering
-│   ├── preprocessing.py            # Unit II — Normalization, PCA, LDA, K-Fold CV
-│   ├── models.py                   # Unit V  — Random Forest, SVM (3 kernels), Voting Ensemble
-│   ├── evaluation.py               # Unit III— Confusion Matrix, ROC/AUC, Precision, Recall, F1
-│   ├── feature_importance.py       # Explainability — Feature ranking, per-patient risk
-│   └── generate_dataset.py         # OASIS dataset downloader + synthetic fallback
-│
-├── 📁 data/
-│   └── oasis_longitudinal.csv      # Real OASIS clinical dataset (auto-downloaded)
-│
-├── 📁 outputs/                     # Generated charts and plots
-│   ├── confusion_matrix_*.png
-│   ├── roc_curve_*.png
-│   ├── feature_importance.png
-│   ├── pca_visualization.png
-│   ├── lda_visualization.png
-│   └── model_comparison.png
-│
-├── 📁 website/                     # Full HTML/CSS/JS website
-│   └── index.html
-│
-├── run_ml_pipeline.py              # Main pipeline — run this
-├── app.py                          # Streamlit web app
-└── README.md
-```
-
----
-
-## 🚀 Quick Start
-
-### 1. Install Dependencies
-```bash
-pip install scikit-learn pandas numpy matplotlib seaborn plotly streamlit imbalanced-learn
-```
-
-### 2. Run the ML Pipeline
-```bash
-python run_ml_pipeline.py
-```
-This will:
-- Auto-download the OASIS dataset
-- Preprocess + engineer clinical features
-- Train all models with hyperparameter tuning
-- Generate all evaluation charts in `outputs/`
-
-### 3. Launch the Web App
-```bash
-streamlit run app.py
-```
-
-### 4. Open the Website
-```
-Open website/index.html in any browser
-```
-
----
-
-## 🧪 Dataset — OASIS Longitudinal
-
-| Property | Value |
-|:---------|:------|
-| Source | Open Access Series of Imaging Studies (OASIS) |
-| Records | 373 clinical patient records |
-| Features | Age, Gender, EDUC, SES, MMSE, CDR, eTIV, nWBV, ASF |
-| Target | Demented / Nondemented |
-| Missing Values | SES (19), MMSE (2) — filled with median |
-
-**Clinical Feature Engineering (6 derived features):**
-| Feature | Formula | Clinical Meaning |
-|:--------|:--------|:----------------|
-| `Cognitive_Index` | MMSE × (1 − CDR×0.5) | Combined cognitive + dementia score |
-| `CDR_MMSE_product` | CDR × (30 − MMSE) | Severity × cognitive deficit |
-| `MMSE_CDR_diff` | MMSE − (CDR×10) | Net cognitive score |
-| `Age_MMSE_ratio` | Age / (MMSE+1) | Cognitive decline relative to age |
-| `Brain_Vol_Ratio` | nWBV / (eTIV/1000) | Normalized brain volume |
-| `Age_nWBV_interact` | Age × (1 − nWBV) | Age-adjusted brain atrophy |
-
----
-
-## ⚙️ Pipeline Steps
-
-```
-Step 1 → Load OASIS Dataset (auto-download)
-Step 2 → Preprocess + Feature Engineering (Unit I + II)
-Step 3 → PCA & LDA Visualization (Unit II)
-Step 4 → Train Models with Hyperparameter Tuning (Unit V)
-Step 5 → 5-Fold Stratified Cross-Validation (Unit II)
-Step 6 → Evaluation Metrics (Unit III)
-Step 7 → Feature Importance & Clinical Explainability
-```
-
----
-
-## 📚 CI2018 Syllabus Coverage
-
-| Unit | Topic | Implementation |
-|:-----|:------|:--------------|
-| **Unit I** | ML Basics, Data Types, Feature Engineering, Train/Test Split | `data_loader.py` |
-| **Unit II** | Normalization, K-Fold CV, PCA, LDA, Dimensionality Reduction | `preprocessing.py` |
-| **Unit III** | Confusion Matrix, Accuracy, Precision, Recall, F1, ROC/AUC | `evaluation.py` |
-| **Unit IV** | Gradient Descent, Cost Functions, Bias-Variance, Regularization | `models.py` (tuning) |
-| **Unit V** | SVM (3 kernels), Random Forest, Bagging, Feature Importance | `models.py`, `feature_importance.py` |
-
----
-
-**VIT Pune · B.Tech CSE (AI) · CI2018 Machine Learning · AY 2025-26**
-
----
-
-## � License
-
-MIT License — free to use for academic purposes.

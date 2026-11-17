@@ -1,0 +1,18 @@
+#neura-root{font-family:Arial,sans-serif}
+.neura-card{box-sizing:border-box;width:100%;padding:18px 20px;border:2px solid #b9d9d2;border-radius:22px;background:linear-gradient(135deg,#f8fffd,#eef9ff);box-shadow:0 5px 18px rgba(0,0,0,.08)}
+.neura-row{display:flex;align-items:center;gap:14px}
+.neura-orb{width:58px;height:58px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:#fff;font-size:30px;box-shadow:0 3px 10px rgba(0,0,0,.12)}
+.neura-title{margin:0;font-size:26px;line-height:1.1;color:#173b43;font-weight:800}
+.neura-sub{margin:4px 0 0;font-size:15px;color:#4c6970;font-weight:600}
+.neura-status{margin:14px 0;font-size:17px;line-height:1.4;color:#173b43;font-weight:700;min-height:48px}
+.neura-controls{display:flex;gap:10px;flex-wrap:wrap}
+.neura-btn{border:0;border-radius:14px;padding:12px 18px;font-size:17px;font-weight:800;cursor:pointer}
+.neura-primary{background:#176b63;color:white}
+.neura-secondary{background:#e5eeee;color:#173b43}
+.neura-btn:focus{outline:3px solid #ffbf47;outline-offset:2px}
+.neura-hidden{display:none}
+.neura-listening .neura-orb{animation:neuraPulse 1.2s infinite}
+.neura-listening .neura-status{color:#176b63}
+@keyframes neuraPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.neura-mini{margin-top:10px;font-size:13px;line-height:1.35;color:#5a6d72}
+@media(max-width:600px){.neura-title{font-size:23px}.neura-status{font-size:16px}.neura-btn{font-size:16px}}
