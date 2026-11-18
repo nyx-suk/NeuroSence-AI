@@ -78,24 +78,22 @@ load_dotenv(dotenv_path=ENV_PATH)
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
 if not GROQ_API_KEY or GROQ_API_KEY == "your_groq_api_key_here":
-    _err = (
-        "❌ Missing GROQ_API_KEY: A valid Groq Cloud API key is required.\n\n"
-        "Please create a .env file from .env.example:\n"
-        "  cp .env.example .env\n"
-        "and set GROQ_API_KEY=your_key_here\n"
-        "or export GROQ_API_KEY in your environment before starting."
+    client = None
+    st.warning(
+        "⚠️ **GROQ_API_KEY is not configured.** "
+        "AI Chatbot and Voice Q&A are disabled. "
+        "All other features (Cognitive Games, Memory Questionnaire, Dashboard, Reminders, Safety) remain active. "
+        "To enable AI features, configure GROQ_API_KEY in your `.env` file (see `.env.example`)."
     )
-    st.error(_err)
-    sys.stderr.write(f"\n{_err}\n\n")
-    st.stop()
-
-if Groq is None:
-    _err = "❌ Missing Package: 'groq' SDK is not installed. Please install it with: pip install groq"
-    st.error(_err)
-    sys.stderr.write(f"\n{_err}\n\n")
-    st.stop()
-
-client = Groq(api_key=GROQ_API_KEY)
+elif Groq is None:
+    client = None
+    st.warning("⚠️ The `groq` Python package is not installed. AI Chatbot and Voice Q&A are disabled.")
+else:
+    try:
+        client = Groq(api_key=GROQ_API_KEY)
+    except Exception as _e:
+        client = None
+        st.warning(f"⚠️ Could not initialize Groq client: {_e}. AI Chatbot and Voice Q&A are disabled.")
 
 # Caregiver phone numbers are taken from the trusted contacts saved in the SOS/Caregiver Portal.
 
@@ -2488,18 +2486,19 @@ def render_top_bar():
 # LOAD MODELS  (cached — loaded once per session)
 # ══════════════════════════════════════════════════════════════
 MODEL_ERROR = None
+pipe = None
 try:
     with st.spinner("🧠 Getting SYNAPTIQ ready for you…"):
         pipe = load_pipeline()
-except Exception as model_exc:  # pragma: no cover - environment dependent
+except Exception as model_exc:
+    import traceback
     pipe = None
-    MODEL_ERROR = str(model_exc)
-
-if pipe is None:
-    st.error("⚠️ Something went wrong while preparing the health models. "
-             "Memories, reminders, games and safety features still work.")
-    with st.expander("🔧 Technical details (for developers)"):
-        st.code(str(MODEL_ERROR))
+    MODEL_ERROR = traceback.format_exc()
+    st.error(
+        f"❌ **ML Pipeline Initialization Failed**: `{type(model_exc).__name__}: {model_exc}`\n\n"
+        f"```text\n{MODEL_ERROR}\n```"
+    )
+    sys.stderr.write(f"\n[ERROR] load_pipeline() failed:\n{MODEL_ERROR}\n")
 
 render_top_bar()
 
@@ -3288,7 +3287,11 @@ suggest seeing a qualified doctor.
         with st.chat_message(role):
             st.write(msg)
 
-    user_input = st.chat_input("Type your question here…")
+    if client is None:
+        st.warning("⚠️ **AI Chatbot is disabled**: `GROQ_API_KEY` is missing or invalid. Please add your key to `.env` to enable AI conversations.")
+        user_input = st.chat_input("AI Chatbot disabled (missing GROQ_API_KEY)", disabled=True)
+    else:
+        user_input = st.chat_input("Type your question here…")
     if st.session_state.chat_pending:
         user_input = st.session_state.chat_pending
         st.session_state.chat_pending = None
@@ -4156,8 +4159,9 @@ elif page == "🎤 Voice Assistant":
             go_to("💬 AI Chatbot")
     elif client is None:
         st.warning(
-            "⚠️ The AI voice service is not set up on this device. "
-            "Ask a helper to add a GROQ_API_KEY and restart the app."
+            "⚠️ **Voice Q&A is disabled**: `GROQ_API_KEY` is not configured. "
+            "Whisper speech transcription and AI voice responses require a valid key in `.env`. "
+            "All other features (Cognitive Games, Memory Questionnaire, Dashboard, Safety, Reminders) remain fully functional."
         )
     else:
         st.markdown("<div style='text-align:center;font-size:5rem;line-height:1;'>🎤</div>",

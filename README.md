@@ -1,123 +1,108 @@
-🧠 SYNAPTIQ PROJECT DOCUMENTATION
-1. 📌 Project Title
+# SYNAPTIQ — Memory Assistance Platform
 
-Synaptiq — AI-Powered Cognitive Assessment and Alzheimer’s Support System
+SYNAPTIQ is a Streamlit prototype for cognitive screening, memory support, and caregiver safety. It combines interactive cognitive activities and assessment tools with multilingual AI assistance. It is intended for demonstration and supportive use; it is not a diagnostic system or a substitute for assessment by a qualified clinician.
 
-2. 🧠 Abstract
+## What’s in the app
 
-Synaptiq is an AI-assisted healthcare application designed to analyze cognitive health and assist in early detection of Alzheimer’s-related symptoms. The system integrates rule-based cognitive assessment, interactive visualization, multilingual AI chatbot support, and voice-based interaction to provide an intelligent and user-friendly diagnostic experience.
+- **Cognitive dashboard and assessments** for recording cognitive screening results and viewing history and analytics.
+- **Cognitive games** such as card memory, working memory, and memory maze activities.
+- **Multilingual AI chatbot** powered by Groq, with language options including Northeast Indian languages.
+- **Voice assistant** for spoken interaction, subject to optional audio dependencies and browser support.
+- **Caregiver portal and memory support** for trusted contacts and personal memory prompts.
+- **Safety features** including SOS calling and GPS safe-zone/geofencing tools. Location access depends on browser permissions and device support.
+- **ML research pipeline** in `run_ml_pipeline.py`, separate from the Streamlit app. It trains and evaluates classifiers using OASIS data and writes visualizations to `outputs/`.
 
-It aims to make early cognitive screening more accessible, interactive, and interpretable for both patients and healthcare professionals.
+## 🛠️ Setup & Installation
 
-3. 🎯 Objectives
-To detect early signs of cognitive decline using MMSE and CDR scores
-To provide an AI-powered conversational assistant for medical queries
-To visualize cognitive progression in an intuitive timeline format
-To build interactive cognitive training games for memory assessment
-To support multilingual and voice-based interaction
-4. ⚙️ System Architecture
-🧩 Architecture Flow:
-User Input
-   ↓
-Streamlit UI Layer
-   ↓
-Rule-Based Cognitive Model (MMSE → Stage Classification)
-   ↓
-LLM Layer (Groq / Llama-3)
-   ↓
-Visualization Engine (Timeline, Charts, Games)
-   ↓
-Final Output (Diagnosis + AI Response + Interaction UI)
-5. 🧠 Modules Description
-5.1 🏠 Dashboard Module
-Displays patient cognitive summary
-Shows MMSE, CDR, and risk confidence
-Provides overall diagnostic snapshot
-5.2 🧠 Risk Timeline Module
-Converts MMSE score into 7-stage cognitive classification
-Visualizes progression from:
-No Decline → Very Severe Decline
-Interactive slider-based exploration
-5.3 🎤 Voice Assistant Module
-Converts speech to text using Whisper model
-Processes query using LLM (Llama 3.1 via Groq)
-Returns medical responses in natural language
-5.4 💬 Multilingual Chatbot
-Supports multiple languages (English, Hindi, Kannada, Tamil)
-Uses LLM for Alzheimer-specific responses
-Maintains chat history using session state
-5.5 🧩 Cognitive Memory Game
-Cognitive training mini-game
-Includes:
-Memory preview phase
-Hidden recall phase
-Tracks:
-attempts
-score
-accuracy
-5.6 🔐 Authentication System
-Simple session-based login system
-Role-based access (Doctor / Patient / Admin concept ready)
-6. 🤖 AI / ML Methodology
-🧠 Cognitive Classification Model
+### 1. Prerequisites
+- Python 3.10+ (Python 3.12 recommended)
+- `ffmpeg` (optional, for audio format conversion)
 
-Currently uses a rule-based ML simulation model:
+### 2. Environment Setup
+```bash
+# Clone the repository
+git clone https://github.com/nyx-suk/NeuroSense-AI.git
+cd NeuroSense-AI
 
-MMSE Score → Cognitive Stage Mapping
-MMSE Range	Stage
-27–30	No Decline
-24–26	Very Mild
-20–23	Mild
-15–19	Moderate
-10–14	Moderately Severe
-5–9	Severe
-<5	Very Severe
-🧠 AI Chat System
-Uses Groq API (Llama 3.1 model)
-Prompt-engineered for Alzheimer-focused responses
-Supports multilingual output
-🎤 Speech Processing
-Whisper Large-v3 model for transcription
-Converts speech → text → AI response
-7. 📊 Visualization Techniques
-📈 Cognitive timeline (7-stage progression axis)
-📊 Metric cards (MMSE, CDR, Risk score)
-🎮 Interactive memory game UI
-💬 Chat-based conversational UI
-🎤 Voice interaction feedback system
-8. 🛠️ Tech Stack
-Frontend / UI:
-Streamlit
-AI Models:
-Llama 3.1 (Groq API)
-Whisper Large-v3
-Backend Logic:
-Python
-Session State Management
-Libraries:
-Streamlit
-Groq SDK
-NumPy
-Pandas
-Tempfile
-9. 🚀 Key Features
-🧠 Alzheimer risk stage prediction
-🎤 Voice-based AI assistant
-💬 Multilingual chatbot
-🧩 Cognitive memory game
-📊 Interactive timeline visualization
-🔐 Login authentication system
-10. 📌 Limitations
-Requires internet for LLM API
-Limited clinical validation dataset
-11. 🔮 Future Scope
-Integration with real ML models (Random Forest / XGBoost)
-MRI / brain scan image analysis
-Wearable device integration
-Real-time cognitive tracking
-Hospital EMR integration
-Offline medical assistant mode
-12. 🧾 Conclusion
+# Create and activate a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate       # On Windows: .venv\Scripts\activate
+```
 
-Synaptiq demonstrates how AI can be used to assist in early cognitive screening and Alzheimer’s support. By combining machine learning logic, generative AI, speech processing, and interactive visualization, it provides a comprehensive cognitive health assistant system that is both accessible and scalable.
+### 3. Install Dependencies
+Install all pinned dependencies using `requirements.txt`:
+```bash
+pip install -r requirements.txt
+```
 
+### 4. Configure Environment Variables
+Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
+```
+Open `.env` and set your `GROQ_API_KEY`:
+```env
+GROQ_API_KEY=your_groq_api_key_here
+```
+*(Get a free key at [console.groq.com](https://console.groq.com/keys). If omitted, the app starts with offline core features like games and assessments; only the chatbot and voice Q&A will be disabled).*
+
+### 5. Run the Application
+Launch the Streamlit app:
+```bash
+streamlit run ourapp.py
+```
+Open [http://localhost:8501](http://localhost:8501) in your browser.
+
+## Demo accounts
+
+The app currently defines these demo credentials in code:
+
+| Role | Username | Password |
+|---|---|---|
+| Doctor | `doctor` | `1234` |
+| Admin | `admin` | `admin123` |
+| Patient | `patient` | `test` |
+| Caregiver | `caregiver` | `care123` |
+
+These are demonstration credentials, not production authentication. Do not deploy the app with them or use it to store real patient information without replacing the authentication and data-protection approach.
+
+## ML pipeline
+
+`run_ml_pipeline.py` runs a separate supervised-learning workflow: it loads OASIS longitudinal data, preprocesses features, trains Random Forest, SVM, and voting-ensemble models, evaluates them, and saves plots under `outputs/`.
+
+Install the additional packages used by the pipeline:
+
+```bash
+python -m pip install scikit-learn imbalanced-learn matplotlib seaborn
+```
+
+Then run:
+
+```bash
+python run_ml_pipeline.py
+```
+
+The pipeline may download OASIS data if `data/oasis_longitudinal.csv` is missing. If that download fails, its loader can fall back to generated synthetic data. Check the dataset source and actual run output before interpreting metrics. Results from this experimental pipeline are not evidence of clinical performance.
+
+## Repository map
+
+```text
+ourapp.py                  Current consolidated Streamlit application
+requirements.txt           Pinned environment dependencies
+theme.py                   Shared UI theme
+ml/                        Data preparation, models, evaluation, explainability
+run_ml_pipeline.py         Standalone model-training pipeline
+data/                      Dataset directory
+cognitive_demo_videos/     Demonstration videos for cognitive activities
+neura_voice_assistant/     Voice-assistant interface assets
+.env.example               Environment-variable template
+```
+
+The app stores safety and cognitive records in local SQLite databases. Treat these files as sensitive if they contain real information, and make sure the runtime environment provides appropriate access controls and backups.
+
+## Limitations
+
+- AI output depends on an external Groq service and should not be treated as medical advice.
+- Cognitive activities and scores are supportive prototypes, not validated diagnoses.
+- Browser location, speech recognition, and audio conversion depend on the user’s device, browser permissions, and installed packages.
+- The demo login and local SQLite storage are not designed for production healthcare deployment.
