@@ -1,5 +1,7 @@
 # SYNAPTIQ — Memory Assistance Platform
 
+> **Notice:** Research prototype. Not a diagnostic tool.
+
 SYNAPTIQ is a Streamlit prototype for cognitive screening, memory support, and caregiver safety. It combines interactive cognitive activities and assessment tools with multilingual AI assistance. It is intended for demonstration and supportive use; it is not a diagnostic system or a substitute for assessment by a qualified clinician.
 
 ## What’s in the app
@@ -102,6 +104,7 @@ The app stores safety and cognitive records in local SQLite databases. Treat the
 
 ## Limitations
 
+- **Research prototype. Not a diagnostic tool.** All screenings and scores are experimental.
 - AI output depends on an external Groq service and should not be treated as medical advice.
 - Cognitive activities and scores are supportive prototypes, not validated diagnoses.
 - Browser location, speech recognition, and audio conversion depend on the user’s device, browser permissions, and installed packages.

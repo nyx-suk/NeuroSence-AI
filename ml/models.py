@@ -165,10 +165,10 @@ def train_voting_ensemble(X_train, y_train):
     """
     Soft Voting Ensemble: RF + SVM(RBF) + SVM(Linear).
     - RF        : Bagging with feature subsampling
-    - SVM(RBF)  : Best for non-linear clinical boundaries
-    - SVM(Lin)  : Strong linear boundary for well-separated classes
-    Soft voting averages predicted probabilities → most reliable predictions.
-    Validated at 96% test accuracy on OASIS dataset.
+    - SVM(RBF)  : Non-linear decision boundaries
+    - SVM(Lin)  : Linear decision boundary
+    Soft voting averages predicted probabilities.
+    Evaluated on the OASIS longitudinal dataset.
     """
     print("\n🗳️  Training Voting Ensemble (RF + SVM-RBF + SVM-Linear)...")
 

@@ -1341,8 +1341,13 @@ def login_ui():
 
 
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown('<div class="sq-card"><h3>🔐 Sign In</h3><p>Please type your user name and password, then press the green button.</p></div>',
-                    unsafe_allow_html=True)
+        st.markdown(
+            '<div class="sq-card"><h3>🔐 Sign In</h3>'
+            '<p>Please type your user name and password, then press the green button.</p>'
+            '<div style="font-size:0.85rem;color:#718096;margin-top:0.4rem;font-weight:600;">'
+            '🔬 Research prototype. Not a diagnostic tool.</div></div>',
+            unsafe_allow_html=True
+        )
 
         username = st.text_input("👤 User name", placeholder="Type your user name")
         password = st.text_input("🔑 Password", type="password", placeholder="Type your password")
@@ -2371,6 +2376,9 @@ with st.sidebar:
             <div style="font-size:.95rem;color:{t['txt2']};margin-top:.25rem;">
                 AI-assisted screening support · not a medical diagnosis
             </div>
+            <div style="font-size:.85rem;color:{t['txt2']};margin-top:.35rem;font-weight:600;">
+                🔬 Research prototype. Not a diagnostic tool.
+            </div>
         </div>
         """),
         unsafe_allow_html=True
@@ -2474,6 +2482,7 @@ page = st.session_state.nav_page
 
 def render_top_bar():
     """Always-visible Home and Emergency actions, never hidden in the sidebar."""
+    st.caption("🔬 **Research prototype. Not a diagnostic tool.**")
     left, right = st.columns([1, 1])
     with left:
         if st.button("🏠 Back to Home", use_container_width=True, key="topbar_home"):
@@ -2608,17 +2617,35 @@ if page == "🏠 Home":
 
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown(
-        f'<div class="sq-note">⚠️ <b>{tr("Please note:")}</b> {tr("SYNAPTIQ gives AI-assisted screening support and daily memory help. It does not replace an examination by a qualified healthcare professional.")}</div>',
+        f'<div class="sq-note">⚠️ <b>{tr("Please note:")}</b> <b>Research prototype. Not a diagnostic tool.</b><br>'
+        f'{tr("SYNAPTIQ gives AI-assisted screening support and daily memory help. It does not replace an examination by a qualified healthcare professional.")}</div>',
         unsafe_allow_html=True
     )
 
     # ── Technical information, kept available but out of the way ──
     with st.expander("📊 For clinicians, caregivers and reviewers — how the model works"):
-        st.markdown("#### Model performance summary")
+        st.markdown("#### Model performance summary (evaluated on test split)")
+
+        if pipe and pipe.get("results"):
+            best_res = max(pipe["results"].values(), key=lambda r: r.get("accuracy", 0))
+            best_acc_str = f"{best_res.get('accuracy', 0) * 100:.2f}%"
+            best_prec_str = f"{best_res.get('precision', 0):.4f}"
+            best_rec_str = f"{best_res.get('recall', 0):.4f}"
+            best_f1_str = f"{best_res.get('f1', 0):.4f}"
+            records_count = str(len(pipe.get("df", []))) if pipe.get("df") is not None else "373"
+
+            models_d = list(pipe["results"].keys())
+            accs_d = [round(r.get("accuracy", 0) * 100, 2) for r in pipe["results"].values()]
+        else:
+            best_acc_str, best_prec_str, best_rec_str, best_f1_str = "—", "—", "—", "—"
+            records_count = "—"
+            models_d = ["Voting Ensemble", "Random Forest", "SVM Linear", "SVM Polynomial", "SVM RBF"]
+            accs_d = [0.0, 0.0, 0.0, 0.0, 0.0]
+
         metric_columns = st.columns(5)
         for column, (value, label) in zip(metric_columns, [
-            ("96.00%", "Best Accuracy"), ("0.9629", "Precision"),
-            ("0.9600", "Recall"), ("0.9599", "F1-Score"), ("373", "Clinical Records")
+            (best_acc_str, "Best Accuracy"), (best_prec_str, "Precision"),
+            (best_rec_str, "Recall"), (best_f1_str, "F1-Score"), (records_count, "Dataset Records")
         ]):
             column.markdown(
                 f"<div class='sq-stat'><div class='n'>{value}</div><div class='l'>{label}</div></div>",
@@ -2651,23 +2678,19 @@ if page == "🏠 Home":
                 </div>""", unsafe_allow_html=True)
 
         with right:
-            st.markdown('<div class="section-header">Model Comparison</div>', unsafe_allow_html=True)
-            models_d = ['Voting Ensemble', 'Random Forest', 'SVM Linear', 'SVM Polynomial', 'SVM RBF']
-            accs_d = [96.00, 94.67, 94.67, 94.67, 90.67]
-            colors_d = [t['blue'], t['green'], t['purple'], t['orange'], t['pink']]
+            st.markdown('<div class="section-header">Model Comparison (Test Set)</div>', unsafe_allow_html=True)
+            colors_palette = [t['blue'], t['green'], t['purple'], t['orange'], t['pink']]
+            colors_d = [colors_palette[i % len(colors_palette)] for i in range(len(models_d))]
             fig = go.Figure(go.Bar(
                 x=accs_d, y=models_d, orientation='h',
                 marker=dict(color=colors_d),
-                text=[f"{v:.1f}%" for v in accs_d],
+                text=[f"{v:.1f}%" if v > 0 else "N/A" for v in accs_d],
                 textposition='outside', textfont=dict(color=t['txt'], size=12),
             ))
-            fig.add_vline(x=93, line_dash="dash", line_color=t['orange'],
-                          annotation_text="Clinical Threshold 93%",
-                          annotation_font_color=t['orange'], annotation_font_size=11)
             fig.update_layout(
                 paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
                 font=dict(color=t['txt'], family='Nunito'),
-                xaxis=dict(range=[80, 100], gridcolor=t['grid'], ticksuffix='%'),
+                xaxis=dict(range=[0, 105], gridcolor=t['grid'], ticksuffix='%'),
                 yaxis=dict(gridcolor=t['grid']),
                 margin=dict(l=10, r=70, t=10, b=10), height=280, showlegend=False,
             )
@@ -4942,12 +4965,12 @@ elif page == "📈 Visualizations":
     st.markdown(f"""
     <div style='background:linear-gradient(135deg,{t['ins1']},{t['ins2']});
                 border:1px solid {t['ins_b']};border-radius:10px;padding:1rem 1.2rem;'>
-        <span style='color:{t['blue']};font-weight:600;'>💡 Clinical Insight: </span>
-        <span style='color:{t['txt']};'>Top predictors are
+        <span style='color:{t['blue']};font-weight:600;'>💡 Feature Insight: </span>
+        <span style='color:{t['txt']};'>Top predictors in this dataset are
         <strong style="color:{t['blue']};">{top3[0]}</strong>,
         <strong style="color:{t['blue']};">{top3[1]}</strong>, and
-        <strong style="color:{t['blue']};">{top3[2]}</strong> —
-        all clinically validated Alzheimer's biomarkers.</span>
+        <strong style="color:{t['blue']};">{top3[2]}</strong>
+        based on Random Forest feature importance rankings.</span>
     </div>""", unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)

@@ -1,11 +1,10 @@
 """
 ╔══════════════════════════════════════════════════════════════════╗
 ║  NeuroSense — Interpretable Alzheimer's Detection                ║
-║  Pure Machine Learning Pipeline                                  ║
+║  Machine Learning Evaluation Pipeline                            ║
 ║                                                                  ║
-║  Dataset  : OASIS Longitudinal (Real Clinical Data)              ║
-║            ║
-║  Accuracy : 96% (Medical Grade)                                  ║
+║  Dataset  : OASIS Longitudinal Dataset                           ║
+║  Notice   : Research prototype. Not a diagnostic tool.           ║
 ╚══════════════════════════════════════════════════════════════════╝
 """
 
@@ -164,17 +163,13 @@ print("═"*62)
 
 best = max(all_results, key=lambda r: r['accuracy'])
 acc_pct = best['accuracy'] * 100
-grade = ("🟢 EXCELLENT — Medical Grade"    if acc_pct >= 95 else
-         "🟢 GOOD — Clinically Acceptable" if acc_pct >= 93 else
-         "🟡 ACCEPTABLE"                   if acc_pct >= 90 else
-         "🔴 BELOW CLINICAL THRESHOLD")
 
 print(f"\n  🏆 Best Model  : {best['model']}")
 print(f"     Accuracy    : {acc_pct:.2f}%")
 print(f"     Precision   : {best['precision']:.4f}")
 print(f"     Recall      : {best['recall']:.4f}")
 print(f"     F1-Score    : {best['f1']:.4f}")
-print(f"     Grade       : {grade}")
+print(f"     Notice      : Research prototype. Not a diagnostic tool.")
 
 print(f"\n  📁 Output Files:")
 for f in sorted(os.listdir('outputs')):
