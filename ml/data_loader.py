@@ -1,19 +1,46 @@
 """
 Module 1 - Clinical Data Loader (OASIS Dataset)
 Covers CI2018 Unit I: Dataset Preparation, Feature Engineering,
-Missing Values, Data Cleaning, Data Reduction
+Data Cleaning, Data Reduction
 
-Key clinical insight from OASIS data analysis:
-  - CDR alone almost perfectly separates Demented vs Nondemented
-  - 'Converted' = patients who converted from Nondemented to Demented
-  - Using ALL visits (longitudinal) gives more training samples
-  - Merging Converted → Demented is clinically valid (they ARE demented)
+Target Leakage Prevention:
+  - In the OASIS dataset, CDR (Clinical Dementia Rating) directly encodes
+    the dementia diagnosis (0 = Nondemented, >=0.5 = Demented).
+  - CDR and all CDR-derived features (Cognitive_Index, CDR_MMSE_product,
+    MMSE_CDR_diff) are intentionally EXCLUDED from the feature matrix X.
+  - Retaining CDR in X constitutes target leakage, artificially inflating
+    model accuracy and masking true predictive signal from non-diagnostic
+    features.
+
+Analysis Units & Feature Sets:
+  - unit='baseline' uses each subject's first visit.
+  - unit='all_visits' uses longitudinal visits with group-aware splitting.
+  - feature_set='screening': non-invasive cognitive/demographic screening features.
+  - feature_set='clinical': screening features plus structural MRI neuroimaging metrics.
+  - Median imputation is intentionally excluded from preprocess() to avoid
+    train-test data leakage; missing values are handled downstream within the
+    train/test normalization pipeline.
 """
 
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split, StratifiedGroupKFold, GroupShuffleSplit
 from sklearn.preprocessing import LabelEncoder
+
+
+# ─────────────────────────────────────────────
+# FEATURE SET DEFINITIONS (Excluding CDR & Derived)
+# ─────────────────────────────────────────────
+
+FEATURE_SETS = {
+    'screening': [
+        'Age', 'Gender', 'EDUC', 'SES', 'MMSE', 'Age_MMSE_ratio'
+    ],
+    'clinical': [
+        'Age', 'Gender', 'EDUC', 'SES', 'MMSE', 'Age_MMSE_ratio',
+        'nWBV', 'eTIV', 'ASF', 'Brain_Vol_Ratio', 'Age_nWBV_interact'
+    ]
+}
 
 
 # ─────────────────────────────────────────────
@@ -50,22 +77,14 @@ def explore_data(df: pd.DataFrame):
 
 def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Add clinically meaningful derived features.
+    Add clinically meaningful derived features without target leakage.
 
     Clinical rationale:
-    - Cognitive_Index    : MMSE × (1 - CDR×0.5) — combined cognitive + dementia score
-    - CDR_MMSE_product   : CDR × (30 - MMSE)    — severity × cognitive deficit
     - Age_MMSE_ratio     : Age / (MMSE + 1)      — cognitive decline relative to age
     - Brain_Vol_Ratio    : nWBV / (eTIV/1000)    — normalized brain volume
-    - MMSE_CDR_diff      : MMSE - (CDR * 10)     — net cognitive score
     - Age_nWBV_interact  : Age × (1 - nWBV)      — age-adjusted brain atrophy
     """
     df = df.copy()
-
-    if 'MMSE' in df.columns and 'CDR' in df.columns:
-        df['Cognitive_Index']  = df['MMSE'] * (1 - df['CDR'] * 0.5)
-        df['CDR_MMSE_product'] = df['CDR'] * (30 - df['MMSE'])
-        df['MMSE_CDR_diff']    = df['MMSE'] - (df['CDR'] * 10)
 
     if 'Age' in df.columns and 'MMSE' in df.columns:
         df['Age_MMSE_ratio'] = df['Age'] / (df['MMSE'] + 1)
@@ -76,8 +95,7 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     if 'Age' in df.columns and 'nWBV' in df.columns:
         df['Age_nWBV_interact'] = df['Age'] * (1 - df['nWBV'])
 
-    new_feats = ['Cognitive_Index', 'CDR_MMSE_product', 'MMSE_CDR_diff',
-                 'Age_MMSE_ratio', 'Brain_Vol_Ratio', 'Age_nWBV_interact']
+    new_feats = ['Age_MMSE_ratio', 'Brain_Vol_Ratio', 'Age_nWBV_interact']
     added = [f for f in new_feats if f in df.columns]
     print(f"  ✅ Feature engineering: added {added}")
     return df
@@ -88,7 +106,8 @@ def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
 # ─────────────────────────────────────────────
 
 def preprocess(df: pd.DataFrame, target_col: str = 'Group',
-               merge_converted: bool = True, unit: str = 'baseline'):
+               merge_converted: bool = True, unit: str = 'baseline',
+               feature_set: str = 'screening'):
     """
     Unit I + II: Full clinical preprocessing pipeline.
 
@@ -97,21 +116,34 @@ def preprocess(df: pd.DataFrame, target_col: str = 'Group',
     unit='all_visits':
         Uses every visit and requires group-aware splitting.
 
+    feature_set='screening':
+        Uses non-invasive demographic and cognitive screening features:
+        ['Age', 'Gender', 'EDUC', 'SES', 'MMSE', 'Age_MMSE_ratio'].
+    feature_set='clinical':
+        All screening features plus structural MRI volumetric features:
+        ['nWBV', 'eTIV', 'ASF', 'Brain_Vol_Ratio', 'Age_nWBV_interact'].
+
+    Target Leakage Note:
+        CDR and its derived features (Cognitive_Index, CDR_MMSE_product,
+        MMSE_CDR_diff) are intentionally excluded from X.
+        Median imputation is kept out of preprocess() to prevent train-test
+        data leakage; missing values are imputed during pipeline normalization.
+
     merge_converted=True:
         Merges 'Converted' into 'Demented' — clinically valid since
         Converted patients ARE in the process of becoming Demented.
-        This removes the tiny (37-sample) ambiguous class and gives
-        a clean, well-separated binary problem with high accuracy.
-        The model then predicts: Demented vs Nondemented.
 
     Returns:
-        X (pd.DataFrame): Processed feature matrix.
+        X (pd.DataFrame): Processed feature matrix with selected columns only.
         y_encoded (pd.Series): Encoded target series.
         groups (pd.Series): Subject ID series corresponding to each sample.
         le (LabelEncoder): Fitted label encoder for target classes.
     """
+    if feature_set not in FEATURE_SETS:
+        raise ValueError(f"Unknown feature_set '{feature_set}'. Expected one of {list(FEATURE_SETS.keys())}.")
+
     df = df.copy()
-    print("\n🔧 Preprocessing...")
+    print(f"\n🔧 Preprocessing (feature_set='{feature_set}', unit='{unit}')...")
 
     # 1. Filter by analysis unit (baseline vs all_visits)
     if 'Visit' in df.columns and 'Subject ID' in df.columns:
@@ -132,12 +164,12 @@ def preprocess(df: pd.DataFrame, target_col: str = 'Group',
     else:
         groups = pd.Series(df.index, name='Subject ID')
 
-    # 3. Drop non-clinical columns from feature dataframe
-    drop_cols = ['Subject ID', 'MRI ID', 'Hand', 'MR Delay', 'Visit']
+    # 3. Drop non-clinical columns from feature dataframe (including CDR to prevent leakage)
+    drop_cols = ['Subject ID', 'MRI ID', 'Hand', 'MR Delay', 'Visit', 'CDR']
     existing_drops = [c for c in drop_cols if c in df.columns]
     if existing_drops:
         df.drop(columns=existing_drops, inplace=True)
-        print(f"  Dropped non-clinical columns: {existing_drops}")
+        print(f"  Dropped non-clinical / leaking columns: {existing_drops}")
 
     # 4. Merge Converted → Demented (clinical decision)
     if merge_converted and target_col in df.columns:
@@ -147,27 +179,7 @@ def preprocess(df: pd.DataFrame, target_col: str = 'Group',
             print(f"  Merged {n_converted} 'Converted' samples → 'Demented' "
                   f"(clinically valid: these patients are converting to dementia)")
 
-    # 5. Handle missing values
-    num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-    cat_cols = df.select_dtypes(include=['object']).columns.tolist()
-
-    for col in num_cols:
-        n_missing = df[col].isnull().sum()
-        if n_missing > 0:
-            median_val = df[col].median()
-            df[col] = df[col].fillna(median_val)
-            print(f"  Filled {n_missing} missing in '{col}' → median={median_val:.3f}")
-
-    for col in cat_cols:
-        if col == target_col:
-            continue
-        n_missing = df[col].isnull().sum()
-        if n_missing > 0:
-            mode_val = df[col].mode()[0]
-            df[col] = df[col].fillna(mode_val)
-            print(f"  Filled {n_missing} missing in '{col}' → mode='{mode_val}'")
-
-    # 6. Encode Gender: M→1, F→0
+    # 5. Encode Gender: M→1, F→0 (median imputation is intentionally excluded from preprocess)
     for gender_col in ['Gender', 'M/F']:
         if gender_col in df.columns:
             df['Gender'] = df[gender_col].map({'M': 1, 'F': 0}).fillna(0).astype(int)
@@ -176,17 +188,22 @@ def preprocess(df: pd.DataFrame, target_col: str = 'Group',
             print(f"  Encoded {gender_col}: M→1, F→0")
             break
 
-    # 7. Clinical feature engineering
+    # 6. Clinical feature engineering (non-leaking features only)
     df = engineer_features(df)
 
-    # 8. Separate features and target
-    X = df.drop(columns=[target_col]).reset_index(drop=True)
+    # 7. Select only the specified feature set columns (excluding CDR and CDR-derived features)
+    selected_cols = FEATURE_SETS[feature_set]
+    missing_cols = [c for c in selected_cols if c not in df.columns]
+    if missing_cols:
+        raise KeyError(f"Missing required columns for feature set '{feature_set}': {missing_cols}")
+
+    X = df[selected_cols].copy().reset_index(drop=True)
     y = df[target_col].reset_index(drop=True)
 
     le = LabelEncoder()
     y_encoded = pd.Series(le.fit_transform(y.astype(str)), name=target_col)
 
-    print(f"\n  Features      : {list(X.columns)}")
+    print(f"\n  Selected Features ({feature_set}): {list(X.columns)}")
     print(f"  Feature shape : {X.shape}")
     print(f"  Classes       : {list(le.classes_)} → {list(range(len(le.classes_)))}")
     for cls, idx in zip(le.classes_, range(len(le.classes_))):

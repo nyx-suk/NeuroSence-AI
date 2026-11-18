@@ -3060,15 +3060,25 @@ elif page == "🔬 Patient Diagnosis":
             try:
                 from sklearn.impute import SimpleImputer
                 gender_enc = 1 if gender == "Male" else 0
-                cog_idx = mmse * (1 - cdr * 0.5)
-                cdr_mmse = cdr * (30 - mmse)
-                mmse_diff = mmse - (cdr * 10)
                 age_mmse = age / (mmse + 1)
-                bvr = nwbv / (etiv / 1000)
+                bvr = nwbv / (etiv / 1000) if etiv else 0.0
                 age_nwbv = age * (1 - nwbv)
 
-                feat_arr = np.array([gender_enc, age, educ, ses, mmse, cdr, etiv, nwbv, asf,
-                                     cog_idx, cdr_mmse, mmse_diff, age_mmse, bvr, age_nwbv]).reshape(1, -1)
+                feat_dict = {
+                    'Age': age,
+                    'Gender': gender_enc,
+                    'EDUC': educ,
+                    'SES': ses,
+                    'MMSE': mmse,
+                    'Age_MMSE_ratio': age_mmse,
+                    'nWBV': nwbv,
+                    'eTIV': etiv,
+                    'ASF': asf,
+                    'Brain_Vol_Ratio': bvr,
+                    'Age_nWBV_interact': age_nwbv,
+                }
+                feat_vec = [feat_dict.get(col, 0.0) for col in pipe['feature_names']]
+                feat_arr = np.array([feat_vec])
                 imp = SimpleImputer(strategy='median')
                 imp.fit(pipe['X_train'])
                 feat_scaled = pipe['scaler'].transform(imp.transform(feat_arr))
