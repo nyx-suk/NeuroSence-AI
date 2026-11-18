@@ -2263,12 +2263,12 @@ def load_pipeline():
     from ml.evaluation       import evaluate_model
 
     df_raw = load_oasis_dataset(save_path='data/oasis_longitudinal.csv')
-    df     = prepare_oasis(df_raw)
-    X, y, le = preprocess(df, target_col='Group', merge_converted=True)
+    df     = prepare_oasis(df_raw, unit='baseline')
+    X, y, groups, le = preprocess(df, target_col='Group', merge_converted=True, unit='baseline')
     feature_names = list(X.columns)
     class_names   = list(le.classes_)
 
-    X_train, X_test, y_train, y_test = split_data(X, y, test_size=0.2)
+    X_train, X_test, y_train, y_test = split_data(X, y, groups=groups, test_size=0.2)
     X_tr_sc, X_te_sc, scaler = normalize(X_train, X_test, method='standard')
     X_bal, y_bal = apply_smote(X_tr_sc, y_train.values)
 

@@ -40,7 +40,7 @@ print("  STEP 1 — REAL CLINICAL DATASET (OASIS Longitudinal)")
 print("═"*62)
 
 df_raw = load_oasis_dataset(save_path='data/oasis_longitudinal.csv')
-df     = prepare_oasis(df_raw)
+df     = prepare_oasis(df_raw, unit='baseline')
 explore_data(df)
 
 
@@ -51,15 +51,17 @@ print("\n" + "═"*62)
 print("  STEP 2 — PREPROCESSING & CLINICAL FEATURE ENGINEERING")
 print("═"*62)
 
-X, y, label_encoder = preprocess(df, target_col='Group', merge_converted=True)
+X, y, groups, label_encoder = preprocess(df, target_col='Group', merge_converted=True, unit='baseline')
 feature_names = list(X.columns)
 class_names   = list(label_encoder.classes_)
 
 print(f"\n  Final class mapping:")
 for i, name in enumerate(class_names):
-    print(f"    {i} → {name}  ({(y == i).sum()} samples)")
+    n_rows = (y == i).sum()
+    n_subjs = groups[y == i].nunique()
+    print(f"    {i} → {name}  ({n_rows} rows, {n_subjs} distinct subjects)")
 
-X_train, X_test, y_train, y_test = split_data(X, y, test_size=0.2)
+X_train, X_test, y_train, y_test = split_data(X, y, groups=groups, test_size=0.2)
 X_train_scaled, X_test_scaled, scaler = normalize(X_train, X_test, method='standard')
 X_train_bal, y_train_bal = apply_smote(X_train_scaled, y_train.values)
 
